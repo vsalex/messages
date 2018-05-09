@@ -1,0 +1,2 @@
+class KeyConflictError(Exception):
+    pass
