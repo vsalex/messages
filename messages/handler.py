@@ -32,31 +32,41 @@ class MessageHandler:
 
     def run(self):
         while True:
-            if self.is_generator:
-                logger.debug("I'm a generator.")
-                self.backend.extend(
-                    key=self.generator_key,
-                    value=True,
-                    if_not_exist=True,
-                    expire_time_ms=self.generator_ttl_ms,
-                )
-                random_message = self.generate_message()
-                self.backend.send(random_message)
-                sleep(GENERATE_MESSAGE_DELAY_MS / 1000)
-                continue
+            self._process_messages()
 
-            logger.debug("I'm receiver.")
-            message = self.backend.receive(self.generator_key)
-            is_generator_online = message.value
+    def _process_messages(self):
+        if self.is_generator:
+            self._process_as_generator()
+            return
 
-            logger.debug(f"Generator is {'online' if is_generator_online else 'offline'}.")
-            if is_generator_online:
-                message = self.backend.receive_by_prefix(self.message_prefix)
-                sleep(self.receive_message_delay_ms / 1000)
-            else:
-                self.is_generator = self.backend.extend(
-                    key=self.generator_key,
-                    value=True,
-                    if_not_exist=True,
-                    expire_time_ms=self.generator_ttl_ms,
-                )
+        self._process_as_receiver()
+
+    def _process_as_generator(self):
+        logger.debug("I'm a generator.")
+        self.backend.extend(
+            key=self.generator_key,
+            value=True,
+            if_not_exist=True,
+            expire_time_ms=self.generator_ttl_ms,
+        )
+        random_message = self.generate_message()
+        self.backend.send(random_message)
+        sleep(GENERATE_MESSAGE_DELAY_MS / 1000)
+
+    def _process_as_receiver(self):
+        logger.debug("I'm receiver.")
+        message = self.backend.receive(self.generator_key)
+        is_generator_online = message.value
+
+        logger.debug(f"Generator is {'online' if is_generator_online else 'offline'}.")
+        if is_generator_online:
+            message = self.backend.receive_by_prefix(self.message_prefix)
+            sleep(self.receive_message_delay_ms / 1000)
+            return
+
+        self.is_generator = self.backend.extend(
+            key=self.generator_key,
+            value=True,
+            if_not_exist=True,
+            expire_time_ms=self.generator_ttl_ms,
+        )
