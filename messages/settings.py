@@ -15,3 +15,5 @@ RECEIVE_MESSAGE_DELAY_MS = 550
 
 # Dotted path to backend class
 MESSAGE_BACKEND = 'messages.backends.redis.RedisMessageBackend'
+MESSAGE_BACKEND_HOST = 'localhost'
+MESSAGE_BACKEND_PORT = 6379

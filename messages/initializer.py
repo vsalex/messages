@@ -2,7 +2,7 @@ import importlib
 import logging
 
 from .exceptions import SettingsError
-from .settings import MESSAGE_BACKEND, LOG_LEVEL
+from .settings import MESSAGE_BACKEND, LOG_LEVEL, MESSAGE_BACKEND_HOST, MESSAGE_BACKEND_PORT
 
 try:
     from redis import StrictRedis
@@ -47,7 +47,7 @@ def get_message_backend_class():
 def get_message_backend():
     backend_class = get_message_backend_class()
     return backend_class(
-        redis=StrictRedis(host='localhost', port=6379, db=0, decode_responses=True),
+        redis=StrictRedis(host=MESSAGE_BACKEND_HOST, port=MESSAGE_BACKEND_PORT, db=0, decode_responses=True),
     )
 
 
