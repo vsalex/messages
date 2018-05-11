@@ -34,22 +34,15 @@ def get_message_backend_class():
 
     try:
         backend_module_path = ".".join(message_backend_list[:-1])
-    except IndexError:
-        raise SettingsError(DEFAULT_ERROR_MESSAGE)
-
-    try:
         backend_module = importlib.import_module(backend_module_path)
-    except ImportError:
-        raise SettingsError(DEFAULT_ERROR_MESSAGE)
-
-    try:
         backend_class = getattr(backend_module, message_backend_list[-1])
-    except AttributeError:
+    except (IndexError, ImportError, AttributeError):
         raise SettingsError(DEFAULT_ERROR_MESSAGE)
 
     return backend_class
 
 
+# TODO not need now - refactor
 def get_args() -> list:
     args = []
     for arg in sys.argv:

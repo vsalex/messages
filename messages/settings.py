@@ -1,3 +1,5 @@
+# TODO think about settings for different env - dev, test, prod...
+
 # Default python logging module levels
 # If set this to "DEBUG" you will see what's going on - recommended for first look at application
 LOG_LEVEL = "DEBUG"
