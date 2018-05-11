@@ -1,8 +1,14 @@
 import importlib
 import logging
+import sys
 
 from .exceptions import SettingsError
-from .settings import MESSAGE_BACKEND, LOG_LEVEL, MESSAGE_BACKEND_HOST, MESSAGE_BACKEND_PORT
+from .handler import MessageHandler
+from .settings import (
+    MESSAGE_BACKEND, LOG_LEVEL, MESSAGE_BACKEND_HOST, MESSAGE_BACKEND_PORT, MESSAGE_BACKEND_PASSWORD,
+    MESSAGE_ERROR_PRINT_ARG,
+)
+
 
 try:
     from redis import StrictRedis
@@ -44,11 +50,32 @@ def get_message_backend_class():
     return backend_class
 
 
+def get_args() -> list:
+    args = []
+    for arg in sys.argv:
+        if arg == MESSAGE_ERROR_PRINT_ARG:
+            args.append(arg)
+
+    return args
+
+
 def get_message_backend():
     backend_class = get_message_backend_class()
     return backend_class(
-        redis=StrictRedis(host=MESSAGE_BACKEND_HOST, port=MESSAGE_BACKEND_PORT, db=0, decode_responses=True),
+        redis=StrictRedis(
+            password=MESSAGE_BACKEND_PASSWORD,
+            host=MESSAGE_BACKEND_HOST,
+            port=MESSAGE_BACKEND_PORT,
+            db=0,
+            decode_responses=True,
+        ),
     )
+
+
+def get_app():
+    message_backend = get_message_backend()
+    # TODO refactor (it is 3 am now)
+    return MessageHandler(backend=message_backend, print_errors=MESSAGE_ERROR_PRINT_ARG in get_args())
 
 
 configure_logging()

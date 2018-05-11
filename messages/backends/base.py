@@ -28,3 +28,15 @@ class BaseMessageBackend(ABC):
     @abstractmethod
     def extend(self, key, value, if_not_exist: bool, expire_time_ms: int) -> bool:
         pass
+
+    @abstractmethod
+    def delete(self, key) -> bool:
+        pass
+
+    @abstractmethod
+    def append(self, key, value) -> bool:
+        pass
+
+    @abstractmethod
+    def get_all(self, key) -> list:
+        pass

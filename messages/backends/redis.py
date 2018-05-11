@@ -74,3 +74,13 @@ class RedisMessageBackend(BaseMessageBackend):
             nx=self.extend_if_not_exist,
             px=self.extend_expire_time_ms,
         )
+
+    def delete(self, key) -> bool:
+        return self.redis.delete(key)
+
+    def append(self, key, value) -> bool:
+        return self.redis.rpush(key, value)
+
+    # TODO refactor
+    def get_all(self, key) -> list:
+        return self.redis.lrange(key, -1000, 1000)

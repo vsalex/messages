@@ -27,6 +27,10 @@ not use OS features.
 Messages are generated every 500 ms. To generate message use any function
 with random text output.
 
+Every received message has 5% to error. Error messages goes to backend.
+There is option to run app with `getErrors` key - errors will show and
+cleaned up.
+
 Usage
 =====
 First of all you need to look at `settings.py` file and configure your
@@ -34,5 +38,8 @@ First of all you need to look at `settings.py` file and configure your
 appropriate `LOG_LEVEL`.
 
 And run a few instances via `python app.py`.
+
+Also you can run `python app.py getErrors` to get all errors and clean
+it.
 
 Have fun!
