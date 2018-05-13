@@ -2,24 +2,20 @@ import logging
 import random
 from time import sleep
 
+from .constants import GET_ERRORS
 from .backends.base import Message
-from .settings import (
-    MESSAGE_PREFIX, GENERATOR_KEY, MESSAGE_ERRORS_QUEUE, MESSAGE_ERROR_CHANCE_INT, GENERATOR_TIMEOUT_MS,
-    GENERATE_MESSAGE_DELAY_MS, RECEIVE_MESSAGE_DELAY_MS,
-)
 from .utils import generate_random_str
-
 
 logger = logging.getLogger(__name__)
 
 
 class MessageHandler:
-    def __init__(self, backend, print_errors=False, receive_message_delay_ms=RECEIVE_MESSAGE_DELAY_MS,
-                 message_prefix=MESSAGE_PREFIX, generator_key=GENERATOR_KEY, message_errors_queue=MESSAGE_ERRORS_QUEUE,
-                 message_error_chance_int=MESSAGE_ERROR_CHANCE_INT, generator_ttl_ms=GENERATOR_TIMEOUT_MS):
+    def __init__(self, backend, incoming_args: list, receive_message_delay_ms: int, message_prefix: str,
+                 generator_key: str, message_errors_queue: str, message_error_chance_int: int, generator_ttl_ms: int,
+                 generate_message_delay_ms: int):
 
         self.backend = backend
-        self.print_errors = print_errors
+        self.incoming_args = incoming_args
 
         self.receive_message_delay_ms = receive_message_delay_ms
         self.message_prefix = message_prefix
@@ -27,13 +23,16 @@ class MessageHandler:
         self.message_errors_queue = message_errors_queue
         self.message_error_chance_int = message_error_chance_int
         self.generator_ttl_ms = generator_ttl_ms
+        self.generate_message_delay_ms = generate_message_delay_ms
 
         self.is_generator = False
+        self.terminate_handler = False
 
-    @staticmethod
-    def generate_message() -> Message:
+        print("message_prefix", message_prefix, self.message_prefix)
+
+    def generate_message(self) -> Message:
         return Message(
-            key=f"{MESSAGE_PREFIX}{generate_random_str()}",
+            key=f"{self.message_prefix}{generate_random_str()}",
             value=generate_random_str(20),
         )
 
@@ -45,14 +44,22 @@ class MessageHandler:
         return False
 
     def run(self):
-        if self.print_errors:
-            errors = self.backend.get_all(self.message_errors_queue)
-            logger.info(f"Errors messages are: {errors}")
-            self.backend.delete(self.message_errors_queue)
+        self._process_incoming_args()
+
+        if self.terminate_handler:
             return
 
         while True:
             self._process_messages()
+
+    def _process_incoming_args(self):
+        """Process script incoming args. Some args may terminate handler."""
+        for arg in self.incoming_args:
+            if arg.value == GET_ERRORS:
+                errors = self.backend.get_all(self.message_errors_queue)
+                logger.info(f"Errors messages are: {errors}")
+                self.backend.delete(self.message_errors_queue)
+                self.terminate_handler = arg.terminate_handler
 
     def _process_messages(self):
         if self.is_generator:
@@ -61,6 +68,7 @@ class MessageHandler:
 
         self._process_as_receiver()
 
+    # TODO TEST if i generator i try to send messages through backend
     def _process_as_generator(self):
         logger.debug("I'm a generator.")
         self.backend.extend(
@@ -71,27 +79,28 @@ class MessageHandler:
         )
         random_message = self.generate_message()
         self.backend.send(random_message)
-        sleep(GENERATE_MESSAGE_DELAY_MS / 1000)
+        sleep(self.generate_message_delay_ms / 1000)
 
+    # TODO TEST if i generator i try to send receive through backend
     def _process_as_receiver(self):
         logger.debug("I'm receiver.")
         message = self.backend.receive(self.generator_key)
         is_generator_online = message.value
 
         logger.debug(f"Generator is {'online' if is_generator_online else 'offline'}.")
-        if is_generator_online:
-            message = self.backend.receive_by_prefix(self.message_prefix)
-
-            if self._is_message_error(message):
-                logger.debug(f"Error in message {message}. Appending message to {self.message_errors_queue}.")
-                self.backend.append(self.message_errors_queue, message.value)
-
-            sleep(self.receive_message_delay_ms / 1000)
+        if not is_generator_online:
+            self.is_generator = self.backend.extend(
+                key=self.generator_key,
+                value=True,
+                if_not_exist=True,
+                expire_time_ms=self.generator_ttl_ms,
+            )
             return
 
-        self.is_generator = self.backend.extend(
-            key=self.generator_key,
-            value=True,
-            if_not_exist=True,
-            expire_time_ms=self.generator_ttl_ms,
-        )
+        message = self.backend.receive_by_prefix(self.message_prefix)
+
+        if message and self._is_message_error(message):
+            logger.debug(f"Error in message {message}. Appending message to {self.message_errors_queue}.")
+            self.backend.append(self.message_errors_queue, message.value)
+
+        sleep(self.receive_message_delay_ms / 1000)

@@ -2,11 +2,13 @@ import importlib
 import logging
 import sys
 
+from .constants import INCOMING_ARGS
 from .exceptions import SettingsError
 from .handler import MessageHandler
 from .settings import (
     MESSAGE_BACKEND, LOG_LEVEL, MESSAGE_BACKEND_HOST, MESSAGE_BACKEND_PORT, MESSAGE_BACKEND_PASSWORD,
-    MESSAGE_ERROR_PRINT_ARG,
+    MESSAGE_PREFIX, GENERATOR_KEY, MESSAGE_ERRORS_QUEUE, MESSAGE_ERROR_CHANCE_INT, GENERATOR_TTL_MS,
+    GENERATE_MESSAGE_DELAY_MS, RECEIVE_MESSAGE_DELAY_MS,
 )
 
 
@@ -29,6 +31,8 @@ def configure_logging():
     logging.getLogger().setLevel(log_level)
 
 
+# TODO TESTS for this function
+# TODO i think here will be good func with arguments, not just functions
 def get_message_backend_class():
     message_backend_list = MESSAGE_BACKEND.split(".")
 
@@ -42,11 +46,12 @@ def get_message_backend_class():
     return backend_class
 
 
-# TODO not need now - refactor
-def get_args() -> list:
+# TODO TEST if app run with some other args
+def get_incoming_args() -> list:
     args = []
-    for arg in sys.argv:
-        if arg == MESSAGE_ERROR_PRINT_ARG:
+
+    for arg in INCOMING_ARGS:
+        if arg.incoming_value in sys.argv:
             args.append(arg)
 
     return args
@@ -67,8 +72,17 @@ def get_message_backend():
 
 def get_app():
     message_backend = get_message_backend()
-    # TODO refactor (it is 3 am now)
-    return MessageHandler(backend=message_backend, print_errors=MESSAGE_ERROR_PRINT_ARG in get_args())
+    return MessageHandler(
+        backend=message_backend,
+        incoming_args=get_incoming_args(),
+        receive_message_delay_ms=RECEIVE_MESSAGE_DELAY_MS,
+        message_prefix=MESSAGE_PREFIX,
+        generator_key=GENERATOR_KEY,
+        message_errors_queue=MESSAGE_ERRORS_QUEUE,
+        message_error_chance_int=MESSAGE_ERROR_CHANCE_INT,
+        generator_ttl_ms=GENERATOR_TTL_MS,
+        generate_message_delay_ms=GENERATE_MESSAGE_DELAY_MS,
+    )
 
 
 configure_logging()
