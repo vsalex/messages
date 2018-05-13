@@ -43,5 +43,3 @@ Also you can run `python app.py getErrors` to get all errors and clean
 it.
 
 Have fun!
-
-ps. No tests :(. It is already 3:25 am, so tests will be tomorrow.

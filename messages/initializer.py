@@ -1,10 +1,12 @@
 import importlib
 import logging
 import sys
+from typing import List, Tuple
 
 from .constants import INCOMING_ARGS
 from .exceptions import SettingsError
 from .handler import MessageHandler
+from .helpers import IncomingArg
 from .settings import (
     MESSAGE_BACKEND, LOG_LEVEL, MESSAGE_BACKEND_HOST, MESSAGE_BACKEND_PORT, MESSAGE_BACKEND_PASSWORD,
     MESSAGE_PREFIX, GENERATOR_KEY, MESSAGE_ERRORS_QUEUE, MESSAGE_ERROR_CHANCE_INT, GENERATOR_TTL_MS,
@@ -46,12 +48,11 @@ def get_message_backend_class():
     return backend_class
 
 
-# TODO TEST if app run with some other args
-def get_incoming_args() -> list:
+def get_incoming_args(incoming_args: List[str], available_args: Tuple[IncomingArg, ...]) -> List[IncomingArg]:
     args = []
 
-    for arg in INCOMING_ARGS:
-        if arg.incoming_value in sys.argv:
+    for arg in available_args:
+        if arg.incoming_value in incoming_args:
             args.append(arg)
 
     return args
@@ -74,7 +75,7 @@ def get_app():
     message_backend = get_message_backend()
     return MessageHandler(
         backend=message_backend,
-        incoming_args=get_incoming_args(),
+        incoming_args=get_incoming_args(sys.argv, INCOMING_ARGS),
         receive_message_delay_ms=RECEIVE_MESSAGE_DELAY_MS,
         message_prefix=MESSAGE_PREFIX,
         generator_key=GENERATOR_KEY,
