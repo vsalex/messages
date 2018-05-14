@@ -73,6 +73,7 @@ class TestHandler(unittest.TestCase):
         self.message_handler._process_as_receiver()
 
         backend.extend.assert_called_once()
+        backend.receive_by_prefix.assert_not_called()
 
 
 if __name__ == '__main__':
