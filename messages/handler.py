@@ -28,8 +28,6 @@ class MessageHandler:
         self.is_generator = False
         self.terminate_handler = False
 
-        print("message_prefix", message_prefix, self.message_prefix)
-
     def generate_message(self) -> Message:
         return Message(
             key=f"{self.message_prefix}{generate_random_str()}",
@@ -68,7 +66,6 @@ class MessageHandler:
 
         self._process_as_receiver()
 
-    # TODO TEST if i generator i try to send messages through backend
     def _process_as_generator(self):
         logger.debug("I'm a generator.")
         self.backend.extend(
@@ -81,7 +78,6 @@ class MessageHandler:
         self.backend.send(random_message)
         sleep(self.generate_message_delay_ms / 1000)
 
-    # TODO TEST if i generator i try to send receive through backend
     def _process_as_receiver(self):
         logger.debug("I'm receiver.")
         message = self.backend.receive(self.generator_key)

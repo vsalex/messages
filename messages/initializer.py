@@ -33,21 +33,6 @@ def configure_logging():
     logging.getLogger().setLevel(log_level)
 
 
-# TODO TESTS for this function
-# TODO i think here will be good func with arguments, not just functions
-def get_message_backend_class():
-    message_backend_list = MESSAGE_BACKEND.split(".")
-
-    try:
-        backend_module_path = ".".join(message_backend_list[:-1])
-        backend_module = importlib.import_module(backend_module_path)
-        backend_class = getattr(backend_module, message_backend_list[-1])
-    except (IndexError, ImportError, AttributeError):
-        raise SettingsError(DEFAULT_ERROR_MESSAGE)
-
-    return backend_class
-
-
 def get_incoming_args(incoming_args: List[str], available_args: Tuple[IncomingArg, ...]) -> List[IncomingArg]:
     args = []
 
@@ -58,13 +43,29 @@ def get_incoming_args(incoming_args: List[str], available_args: Tuple[IncomingAr
     return args
 
 
-def get_message_backend():
-    backend_class = get_message_backend_class()
+def get_message_backend_class(message_backend: str):
+    message_backend_list = message_backend.split(".")
+
+    try:
+        backend_module_path = ".".join(message_backend_list[:-1])
+        backend_module = importlib.import_module(backend_module_path)
+        backend_class = getattr(backend_module, message_backend_list[-1])
+    except (IndexError, ImportError, AttributeError, ValueError):
+        raise SettingsError(DEFAULT_ERROR_MESSAGE)
+
+    return backend_class
+
+
+def get_message_backend(message_backend: str, message_backend_password: str, message_backend_host: str,
+                        message_backend_port: int):
+
+    backend_class = get_message_backend_class(message_backend)
+
     return backend_class(
         redis=StrictRedis(
-            password=MESSAGE_BACKEND_PASSWORD,
-            host=MESSAGE_BACKEND_HOST,
-            port=MESSAGE_BACKEND_PORT,
+            password=message_backend_password,
+            host=message_backend_host,
+            port=message_backend_port,
             db=0,
             decode_responses=True,
         ),
@@ -72,7 +73,12 @@ def get_message_backend():
 
 
 def get_app():
-    message_backend = get_message_backend()
+    message_backend = get_message_backend(
+        message_backend=MESSAGE_BACKEND,
+        message_backend_password=MESSAGE_BACKEND_PASSWORD,
+        message_backend_host=MESSAGE_BACKEND_HOST,
+        message_backend_port=MESSAGE_BACKEND_PORT,
+    )
     return MessageHandler(
         backend=message_backend,
         incoming_args=get_incoming_args(sys.argv, INCOMING_ARGS),
