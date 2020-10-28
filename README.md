@@ -15,13 +15,13 @@ Installation
 
 Specification
 =============
-This app can generate and receive messages. All communication only via
+This app can generate and receive messages. All communication are only via
 configurable backend. All application copies but generator must be receivers.
 Receivers are ready at any moment to receive message from backend.
 
-All messages must be receive by single receiver. Generator must be single
+All messages must be received by single receiver. Generator must be single
 instance. If generator shut downs - any of receivers must should be a
-generator. All communication about who is generator only via backend do
+generator. All communication about who is generator only via backend. Do
 not use OS features.
 
 Messages are generated every 500 ms. To generate message use any function

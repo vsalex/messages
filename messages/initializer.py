@@ -20,8 +20,10 @@ except ImportError:
     raise SettingsError("It seems that redis package is not set.")
 
 DEFAULT_LOG_LEVEL = "DEBUG"
-DEFAULT_ERROR_MESSAGE = "MESSAGE_BACKEND must be dotted path to message backend class " \
-                        "e.g. 'messages.backends.redis.RedisMessageBackend'"
+DEFAULT_ERROR_MESSAGE = (
+    "MESSAGE_BACKEND must be dotted path to message backend class "
+    "e.g. 'messages.backends.redis.RedisMessageBackend'"
+)
 
 
 def configure_logging():
@@ -44,6 +46,9 @@ def get_incoming_args(incoming_args: List[str], available_args: Tuple[IncomingAr
 
 
 def get_message_backend_class(message_backend: str):
+    """
+    Dynamically imports and returns backend class based on full path to backend class.
+    """
     message_backend_list = message_backend.split(".")
 
     try:
@@ -56,8 +61,15 @@ def get_message_backend_class(message_backend: str):
     return backend_class
 
 
-def get_message_backend(message_backend: str, message_backend_password: str, message_backend_host: str,
-                        message_backend_port: int):
+def get_message_backend(
+        message_backend: str,
+        message_backend_password: str,
+        message_backend_host: str,
+        message_backend_port: int
+):
+    """
+    Initializes and returns backend class.
+    """
 
     backend_class = get_message_backend_class(message_backend)
 
@@ -73,6 +85,10 @@ def get_message_backend(message_backend: str, message_backend_password: str, mes
 
 
 def get_app():
+    """
+    Initializes MessageHandler based on settings.
+    """
+
     message_backend = get_message_backend(
         message_backend=MESSAGE_BACKEND,
         message_backend_password=MESSAGE_BACKEND_PASSWORD,

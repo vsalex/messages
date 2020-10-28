@@ -10,9 +10,22 @@ logger = logging.getLogger(__name__)
 
 
 class MessageHandler:
-    def __init__(self, backend, incoming_args: list, receive_message_delay_ms: int, message_prefix: str,
-                 generator_key: str, message_errors_queue: str, message_error_chance_int: int, generator_ttl_ms: int,
-                 generate_message_delay_ms: int):
+    """
+    Class that fully handles messages. Can be initialized as generator or as receiver.
+    """
+
+    def __init__(
+            self,
+            backend,
+            incoming_args: list,
+            receive_message_delay_ms: int,
+            message_prefix: str,
+            generator_key: str,
+            message_errors_queue: str,
+            message_error_chance_int: int,
+            generator_ttl_ms: int,
+            generate_message_delay_ms: int,
+    ):
 
         self.backend = backend
         self.incoming_args = incoming_args
@@ -52,6 +65,7 @@ class MessageHandler:
 
     def _process_incoming_args(self):
         """Process script incoming args. Some args may terminate handler."""
+
         for arg in self.incoming_args:
             if arg.value == GET_ERRORS:
                 errors = self.backend.get_all(self.message_errors_queue)
